@@ -13,7 +13,7 @@ If you use these sniffs and indeed PHP_CodeSniffer I would urge you to [donate](
 The sniffs have been released on to [Packagist](https://packagist.org/packages/thetwopct/wp-org-submission-rules), so installation should be as simple as running:
 
 ```
-composer require-dev thetwopct/wp-org-submission-rules
+composer require thetwopct/wp-org-submission-rules --dev
 ```
 
 You can then check that the ruleset (WPOrgSubmissionRules) is now installed:
@@ -35,7 +35,6 @@ phpcs --standard=WPOrgSubmissionRules your-file.php
 ```
 
 or to run over your whole code:
-
 
 ```
 phpcs --standard=WPOrgSubmissionRules .
