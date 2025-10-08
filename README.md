@@ -40,7 +40,7 @@ or to run over your whole code:
 phpcs --standard=WPOrgSubmissionRules .
 ```
 
-One of the rules looks for unique names of , and you can add a prefix in your custom rules:
+One of the rules looks for unique names of variables, and you can add a prefix in your custom rules:
 
 ```
 <rule ref="WPOrgSubmissionRules.Naming.UniqueName">
@@ -54,71 +54,68 @@ One of the rules looks for unique names of , and you can add a prefix in your cu
 
 Here are some of the review issues from WordPress.org that these sniffs try to make sure you avoid:
 
-1) Use wp_enqueue commands
+### 1) Use wp_enqueue commands
 
-Any inline CSS or JS is flagged.
+Any inline CSS or JS is flagged via `<script>` or `<style>` tags.
 
-2) Generic function/class/define/namespace/option names
+**Sniff**: `WPOrgSubmissionRules.ForbiddenTags.ForbiddenInlineTags`
 
-All plugins must have unique function names, namespaces, defines, class and option names. This prevents your plugin from conflicting with other plugins or themes. WordPress.org expect your plugin to use ore unique and distinct names.
+### 2) Generic function/class/define/namespace/option names
 
-3) Options and Transients must be prefixed.
+All plugins must have unique function names, namespaces, defines, class and option names. This prevents your plugin from conflicting with other plugins or themes. WordPress.org expect your plugin to use unique and distinct names.
+
+**Sniff**: `WPOrgSubmissionRules.Naming.UniqueName`
+
+### 3) Options and Transients must be prefixed
 
 This is really important because the options are stored in a shared location and under the name you have set. If two plugins use the same name for options, they will find an interesting conflict when trying to read information introduced by the other plugin.
 
-4) Internationalization: Don't use variables or defines as text, context or text domain parameters.
+**Sniff**: `WPOrgSubmissionRules.Naming.UniqueName`
+
+### 4) Internationalization: Don't use variables or defines as text, context or text domain parameters
 
 In order to make a string translatable in your plugin you are using a set of special functions. These functions collectively are known as "gettext". There is a dedicated team in the WordPress community to translate and help other translating strings of WordPress core, plugins and themes to other languages.
 
 To make them be able to translate this plugin, please do not use variables or function calls for the text, context or text domain parameters of any gettext function, all of them NEED to be strings. Note that the translation parser reads the code without executing it, so it won't be able to read anything that is not a string within these functions.
 
-## New rules
+**Sniff**: `WPOrgSubmissionRules.Internationalization.TranslationFunctionStringLiteral`
 
-## Nonces and User Permissions Needed for Security
+### 5) Prefix length requirements
 
-Please add a nonce check to your input calls ($_POST, $_GET, $REQUEST) to prevent unauthorized access.
+WordPress.org requires prefixes to be **at least 4 characters long**. The sniff detects short prefixes by extracting the part before the first underscore (this is dumb, but we need to play by their rules):
 
-If you use wp_ajax_ to trigger submission checks, remember they also need a nonce check.
+- `ABC_For_ACF` → prefix is `ABC` (3 chars, too short ❌)
+- `abcfacf_save_post` → prefix is `abcfacf` (8 chars, OK ✅)
 
-👮 Checking permissions: Keep in mind, a nonce check alone is not bulletproof security. Do not rely on nonces for authorization purposes. When needed, use it together with current_user_can() in order to prevent users without the right permissions from accessing things they shouldn't.
+**Sniff**: `WPOrgSubmissionRules.Naming.PrefixLength`
 
-Also make sure that the nonce logic is correct by making sure it cannot be bypassed. Checking the nonce with current_user_can() is great, but mixing it with other checks can make the condition more complex and, without realising it, bypassable, remember that anything can be sent through an input, don't trust any input.
+### 6) Reserved prefixes (wp_, _, __)
 
-Keep performance in mind. Don't check for post submission outside of functions. Doing so means that the check will run on every single load of the plugin, which means that every single person who views any page on a site using your plugin will be checking for a submission. This will make your code slow and unwieldy for users on any high traffic site, leading to instability and eventually crashes.
+WordPress reserves certain prefixes for core functionality:
 
-## Generic function/class/define/namespace/option names
+- `wp_` - Reserved for WordPress core
+- `_` (single underscore) - Reserved for WordPress internal use
+- `__` (double underscore at start) - Reserved for magic methods
 
-All plugins must have unique function names, namespaces, defines, class and option names. This prevents your plugin from conflicting with other plugins or themes. We need you to update your plugin to use more unique and distinct names.
+**Sniff**: `WPOrgSubmissionRules.Naming.PrefixLength`
 
-A good way to do this is with a prefix. For example, if your plugin is called "Better Field Groups for ACF" then you could use names like these:
-function bettfigr_save_post(){ ... }
-class BETTFIGR_Admin { ... }
-update_option( 'bettfigr_options', $options );
-register_setting( 'bettfigr_settings', 'bettfigr_user_id', ... );
-define( 'BETTFIGR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-global $bettfigr_options;
-add_action('wp_ajax_bettfigr_save_data', ... );
-namespace ymmvplugins\betterfieldgroupsforacf;
+### 7) Security: Nonce checks required
 
-Disclaimer: These are just examples that may have been self-generated from your plugin name, we trust you can find better options. If you have a good alternative, please use it instead, this is just an example.
+Any usage of `$_POST`, `$_GET`, or `$_REQUEST` must be accompanied by proper nonce verification using:
 
-Don't try to use two (2) or three (3) letter prefixes anymore. We host nearly 100-thousand plugins on WordPress.org alone. There are tens of thousands more outside our servers. Believe us, you’re going to run into conflicts.
+- `wp_verify_nonce()`
+- `check_ajax_referer()`
+- `check_admin_referer()`
 
-You also need to avoid the use of __ (double underscores), wp_ , or _ (single underscore) as a prefix. Those are reserved for WordPress itself. You can use them inside your classes, but not as stand-alone function.
+Also warns about using these superglobals outside of functions (performance issue).
 
-Please remember, if you're using _n() or __() for translation, that's fine. We're only talking about functions you've created for your plugin, not the core functions from WordPress. In fact, those core features are why you need to not use those prefixes in your own plugin! You don't want to break WordPress for your users.
+**Sniff**: `WPOrgSubmissionRules.Security.NonceCheck`
 
-Related to this, using if (!function_exists('NAME')) { around all your functions and classes sounds like a great idea until you realize the fatal flaw. If something else has a function with the same name and their code loads first, your plugin will break. Using if-exists should be reserved for shared libraries only.
+### 8) Anti-pattern: function_exists() wrapper
 
-Remember: Good prefix names are unique and distinct to your plugin. This will help you and the next person in debugging, as well as prevent conflicts.
+Using `if (!function_exists('name')) { function name() {...} }` is an anti-pattern. If another plugin has a function with the same name and loads first, your plugin will silently fail. Use unique prefixes instead.
 
-Examples:
-
-This plugin is using the prefix "bfg" for 2 element(s).
-
-# The prefix "bfg" is too short, we require prefixes to be over 4 characters.
-better-field-groups-for-acf.php:197 define('BFG_SAVING_' . $post_id, true);
-better-field-groups-for-acf.php:37 class BFG_For_ACF
+**Sniff**: `WPOrgSubmissionRules.Naming.FunctionExistsWrapper`
 
 ## Active development
 

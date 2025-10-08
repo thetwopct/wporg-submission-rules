@@ -2,4 +2,22 @@
 <ruleset name="WPOrgSubmissionRules">
     <description>PHP_CodeSniffer rules (sniffs) to enforce rules required when submitting to WordPress.org Plugin Repository.</description>
     <arg name="extensions" value="php" />
+
+    <!-- Naming Rules -->
+    <rule ref="WPOrgSubmissionRules.Naming.UniqueName"/>
+    <rule ref="WPOrgSubmissionRules.Naming.PrefixLength">
+        <properties>
+            <property name="minPrefixLength" value="4"/>
+        </properties>
+    </rule>
+    <rule ref="WPOrgSubmissionRules.Naming.FunctionExistsWrapper"/>
+
+    <!-- Security Rules -->
+    <rule ref="WPOrgSubmissionRules.Security.NonceCheck"/>
+
+    <!-- Forbidden Tags -->
+    <rule ref="WPOrgSubmissionRules.ForbiddenTags.ForbiddenInlineTags"/>
+
+    <!-- Internationalization Rules -->
+    <rule ref="WPOrgSubmissionRules.Internationalization.TranslationFunctionStringLiteral"/>
 </ruleset>

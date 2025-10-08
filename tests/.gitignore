@@ -1,0 +1,9 @@
+# Ignore any additional test files created by users
+test-*.php
+!test-plugin.php
+
+# Ignore test results
+*.log
+*.xml
+*.txt
+
