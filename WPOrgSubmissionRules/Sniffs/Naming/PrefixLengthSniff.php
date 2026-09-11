@@ -3,6 +3,8 @@ namespace WPOrgSubmissionRules\Sniffs\Naming;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
+use PHP_CodeSniffer\Util\Tokens;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 /**
  * Checks that prefixes in function names, class names, constants, and global variables
@@ -24,6 +26,7 @@ class PrefixLengthSniff implements Sniff
             T_FUNCTION,
             T_CLASS,
             T_STRING,
+            T_NAME_FULLY_QUALIFIED,
             T_VARIABLE,
             T_NAMESPACE,
         ];
@@ -47,6 +50,7 @@ class PrefixLengthSniff implements Sniff
                 break;
 
             case T_STRING:
+            case T_NAME_FULLY_QUALIFIED:
                 $this->processDefine($phpcsFile, $stackPtr);
                 break;
 
@@ -111,7 +115,7 @@ class PrefixLengthSniff implements Sniff
     {
         $tokens = $phpcsFile->getTokens();
 
-        if ($tokens[$stackPtr]['content'] !== 'define') {
+        if (GlobalName::get($phpcsFile, $stackPtr) !== 'define') {
             return;
         }
 
@@ -152,13 +156,15 @@ class PrefixLengthSniff implements Sniff
     private function processNamespace(File $phpcsFile, $stackPtr)
     {
         $tokens = $phpcsFile->getTokens();
-        $namePtr = $phpcsFile->findNext(T_STRING, $stackPtr + 1);
+        $namePtr = $phpcsFile->findNext(Tokens::$emptyTokens, $stackPtr + 1, null, true);
 
-        if (!$namePtr) {
+        // Skip namespace\foo() calls and global namespace { } blocks.
+        if ($namePtr === false || ($tokens[$namePtr]['code'] !== T_STRING && $tokens[$namePtr]['code'] !== T_NAME_QUALIFIED)) {
             return;
         }
 
-        $name = $tokens[$namePtr]['content'];
+        // PHP_CodeSniffer 4 keeps Foo\Bar as one token, so check its first part like PHP_CodeSniffer 3 does.
+        $name = strtok($tokens[$namePtr]['content'], '\\');
         $this->checkPrefix($phpcsFile, $namePtr, $name, 'namespace');
     }
 

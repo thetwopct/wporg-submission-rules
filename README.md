@@ -2,13 +2,15 @@
 
 When submitting a plugin to the WordPress.org repo, there are several checks that the plugin review team apply to your plugin, but which are not fully covered by WordPress Coding Standards or included in the [Plugin Check (PCP)](https://wordpress.org/plugins/plugin-check/) plugin.
 
-This sniff ruleset tries to bring attention to and fix some of the checks that are missed.
+This sniff ruleset tries to bring attention to and fix some of the checks that are missed to ensure your plugin passes first time, every time.
 
-This is an additional ruleset you can add to [PHPCSStandards PHP_CodeSniffer](https://github.com/PHPCSStandards/PHP_CodeSniffer/). PHP CodeSniffer tokenizes PHP files and detects violations of a defined set of coding standards, and also corrects coding standard violations. PHP_CodeSniffer is an essential development tool that ensures your code remains clean and consistent.
+This ruleset is an additional ruleset you can add to [PHPCSStandards PHP_CodeSniffer](https://github.com/PHPCSStandards/PHP_CodeSniffer/). PHP CodeSniffer tokenizes PHP files and detects violations of a defined set of coding standards, and also corrects coding standard violations. PHP_CodeSniffer is an essential development tool that ensures your code remains clean and consistent.
 
-If you use these sniffs and indeed PHP_CodeSniffer I would urge you to [donate](https://opencollective.com/php_codesniffer) _something_ to the project as without funding it will go away and all our code will be worse off.
+If you use these sniffs and indeed PHP_CodeSniffer in your projects I would urge you to [donate](https://opencollective.com/php_codesniffer) _something_ to the project as without funding it will go away and all our code will be worse off.
 
 ## Install
+
+Requires PHP 7.2 or later, and PHP_CodeSniffer 3.13.6+ or 4.0.2+.
 
 The sniffs have been released on to [Packagist](https://packagist.org/packages/thetwopct/wp-org-submission-rules), so installation should be as simple as running:
 
@@ -197,3 +199,7 @@ Some review issues are already detected by the [WordPress Coding Standards](http
 ## Active development
 
 This package is under constant development and will be updated to reflect new checks that the Plugin Team review process throws at us. If you have feedback on these sniffs and want us to add new custom sniffs, [please open an issue](https://github.com/thetwopct/wp-org-submission-rules/issues). This file can be found in our [GitHub](https://github.com/thetwopct/wp-org-submission-rules) repo.
+
+## Disclaimer
+
+This plugin is independently made and is not affiliated with WordPress.org. The WordPress® trademarks are the intellectual property of the WordPress Foundation. Uses of the WordPress® names in this repo are for identification purposes only and do not imply an endorsement by WordPress Foundation.

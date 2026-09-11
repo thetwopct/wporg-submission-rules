@@ -3,6 +3,7 @@ namespace WPOrgSubmissionRules\Sniffs\Naming;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 class UniqueNameSniff implements Sniff
 {
@@ -58,8 +59,8 @@ class UniqueNameSniff implements Sniff
         }
 
         // Check if the string argument is part of a function that requires a prefix
-        $prevTokenPtr = $phpcsFile->findPrevious(T_STRING, $stackPtr - 1);
-        $prevTokenContent = $tokens[$prevTokenPtr]['content'] ?? '';
+        $prevTokenPtr = $phpcsFile->findPrevious([T_STRING, T_NAME_FULLY_QUALIFIED], $stackPtr - 1);
+        $prevTokenContent = $prevTokenPtr !== false ? (string) GlobalName::get($phpcsFile, $prevTokenPtr) : '';
 
         // Only process string arguments in relevant functions
         if (in_array($prevTokenContent, $this->functionsRequiringPrefix, true)) {

@@ -4,6 +4,7 @@ namespace WPOrgSubmissionRules\Sniffs\Concurrency;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 /**
  * Detects non-atomic read-then-write sequences on transients.
@@ -40,7 +41,7 @@ class NonAtomicTransientSniff implements Sniff
      */
     public function register()
     {
-        return [T_STRING];
+        return [T_STRING, T_NAME_FULLY_QUALIFIED];
     }
 
     /**
@@ -48,8 +49,7 @@ class NonAtomicTransientSniff implements Sniff
      */
     public function process(File $phpcsFile, $stackPtr)
     {
-        $tokens = $phpcsFile->getTokens();
-        $name   = strtolower($tokens[$stackPtr]['content']);
+        $name = strtolower((string) GlobalName::get($phpcsFile, $stackPtr));
 
         if (!isset($this->pairs[$name])) {
             return;
@@ -107,7 +107,7 @@ class NonAtomicTransientSniff implements Sniff
         }
 
         for ($i = $end; $i > $start; $i--) {
-            if ($tokens[$i]['code'] !== T_STRING || strtolower($tokens[$i]['content']) !== $readFunction) {
+            if (strtolower((string) GlobalName::get($phpcsFile, $i)) !== $readFunction) {
                 continue;
             }
 
@@ -234,11 +234,14 @@ class NonAtomicTransientSniff implements Sniff
             return in_array($tokens[$first]['code'], [T_LNUMBER, T_DNUMBER, T_TRUE, T_CONSTANT_ENCAPSED_STRING], true);
         }
 
-        // A whole-value call such as time().
+        // A whole-value call such as time(), or \time(), which PHP_CodeSniffer 3 splits in two.
+        if ($tokens[$first]['code'] === T_NS_SEPARATOR) {
+            $first++;
+        }
         $paren = $this->getCallParenthesis($phpcsFile, $first);
 
         return $paren !== false
-            && in_array(strtolower($tokens[$first]['content']), $this->flagFunctions, true)
+            && in_array(strtolower((string) GlobalName::get($phpcsFile, $first)), $this->flagFunctions, true)
             && $tokens[$paren]['parenthesis_closer'] === $last;
     }
 
@@ -271,7 +274,7 @@ class NonAtomicTransientSniff implements Sniff
     private function getAssignedVariable(File $phpcsFile, $callPtr)
     {
         $tokens = $phpcsFile->getTokens();
-        $prev   = $phpcsFile->findPrevious(Tokens::$emptyTokens, $callPtr - 1, null, true);
+        $prev   = $phpcsFile->findPrevious(Tokens::$emptyTokens, GlobalName::getStart($phpcsFile, $callPtr) - 1, null, true);
 
         // Skip casts and wrappers such as (int), intval( and absint(.
         while ($prev !== false) {
@@ -282,8 +285,8 @@ class NonAtomicTransientSniff implements Sniff
 
             if ($tokens[$prev]['code'] === T_OPEN_PARENTHESIS) {
                 $before = $phpcsFile->findPrevious(Tokens::$emptyTokens, $prev - 1, null, true);
-                if ($before !== false && in_array(strtolower($tokens[$before]['content']), ['intval', 'absint'], true)) {
-                    $prev = $phpcsFile->findPrevious(Tokens::$emptyTokens, $before - 1, null, true);
+                if ($before !== false && in_array(strtolower((string) GlobalName::get($phpcsFile, $before)), ['intval', 'absint'], true)) {
+                    $prev = $phpcsFile->findPrevious(Tokens::$emptyTokens, GlobalName::getStart($phpcsFile, $before) - 1, null, true);
                     continue;
                 }
             }
@@ -307,7 +310,7 @@ class NonAtomicTransientSniff implements Sniff
     {
         $tokens = $phpcsFile->getTokens();
 
-        if ($tokens[$stackPtr]['code'] !== T_STRING) {
+        if (GlobalName::get($phpcsFile, $stackPtr) === null) {
             return false;
         }
 

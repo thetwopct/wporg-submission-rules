@@ -3,6 +3,7 @@ namespace WPOrgSubmissionRules\Sniffs\Naming;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 /**
  * Detects the anti-pattern of wrapping function declarations in if (!function_exists()).
@@ -47,7 +48,7 @@ class FunctionExistsWrapperSniff implements Sniff
                 $hasNegation = true;
             }
 
-            if ($tokens[$i]['code'] === T_STRING && $tokens[$i]['content'] === 'function_exists') {
+            if (GlobalName::get($phpcsFile, $i) === 'function_exists') {
                 $hasFunctionExists = true;
             }
         }

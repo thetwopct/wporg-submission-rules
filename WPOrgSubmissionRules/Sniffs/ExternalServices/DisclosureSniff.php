@@ -4,6 +4,7 @@ namespace WPOrgSubmissionRules\Sniffs\ExternalServices;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 /**
  * Detects external services that are not documented in the plugin's readme.
@@ -125,11 +126,7 @@ class DisclosureSniff implements Sniff
         $calls  = [];
 
         for ($i = 0; $i < $phpcsFile->numTokens; $i++) {
-            if ($tokens[$i]['code'] !== T_STRING) {
-                continue;
-            }
-
-            $name = strtolower($tokens[$i]['content']);
+            $name = strtolower((string) GlobalName::get($phpcsFile, $i));
             if (!in_array($name, $this->remoteFunctions, true) && $name !== 'file_get_contents') {
                 continue;
             }

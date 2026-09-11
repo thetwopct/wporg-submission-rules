@@ -217,7 +217,7 @@ class DirectFileAccessSniff implements Sniff
             return $next !== false && in_array($tokens[$next]['code'], $exits, true) ? $phpcsFile->findEndOfStatement($next) : false;
         }
 
-        if ($code === T_STRING || $code === T_NS_SEPARATOR || $code === T_BOOLEAN_NOT) {
+        if (in_array($code, [T_STRING, T_NS_SEPARATOR, T_NAME_FULLY_QUALIFIED, T_BOOLEAN_NOT], true)) {
             $end     = $phpcsFile->findEndOfStatement($stackPtr);
             $content = $this->getContent($phpcsFile, $stackPtr, $end);
             if (preg_match('/^(?:' . $check . '(?:\|\||or)|!' . $check . '(?:&&|and))(?:exit|die)\b/', $content)) {

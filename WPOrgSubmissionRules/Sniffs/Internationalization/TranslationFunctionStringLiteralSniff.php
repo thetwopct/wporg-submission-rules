@@ -4,6 +4,7 @@ namespace WPOrgSubmissionRules\Sniffs\Internationalization;
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
+use WPOrgSubmissionRules\Helpers\GlobalName;
 
 class TranslationFunctionStringLiteralSniff implements Sniff
 {
@@ -12,7 +13,7 @@ class TranslationFunctionStringLiteralSniff implements Sniff
      */
     public function register()
     {
-        return [T_STRING];
+        return [T_STRING, T_NAME_FULLY_QUALIFIED];
     }
 
 	/**
@@ -21,7 +22,7 @@ class TranslationFunctionStringLiteralSniff implements Sniff
     public function process(File $phpcsFile, $stackPtr)
     {
         $tokens = $phpcsFile->getTokens();
-        $functionName = $tokens[$stackPtr]['content'];
+        $functionName = GlobalName::get($phpcsFile, $stackPtr);
 
         $gettextFunctions = [
             '__', '_e', '_x', 'esc_html__', 'esc_html_e', 'esc_html_x',

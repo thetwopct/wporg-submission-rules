@@ -57,13 +57,22 @@ Checked against the `== External services ==` section of `readme.txt` in this di
 - Check-then-set on a transient (duplicate lock) - line 162
 - Cache refill on a transient is OK and not flagged - line 171
 
+#### Fully Qualified Calls
+PHP_CodeSniffer 4 tokenizes `\__()` as a single token, where PHP_CodeSniffer 3 splits it in two. These should be reported the same way in both:
+- `\__()` with a variable - line 181
+- `\get_transient()` then `\set_transient()` (warning) - line 187
+- `\define()` with a short prefix - line 192
+- `if (!\function_exists())` wrapper (warning) - line 195
+
 ## Expected Test Results
 
 When running the sniffs on `test-plugin.php`, you should see approximately:
-- **20 errors**
-- **4 warnings**
+- **22 errors**
+- **6 warnings**
 
-The `Requires Plugins` check looks slugs up on WordPress.org. Without a network connection, `gravityforms` is reported as a `LookupFailed` warning instead of an error, along with one for `classic-editor` (19 errors, 6 warnings).
+The results are the same with PHP_CodeSniffer 3 and 4, except that for fully qualified calls, PHP_CodeSniffer 4 reports the column of the leading backslash.
+
+The `Requires Plugins` check looks slugs up on WordPress.org. Without a network connection, `gravityforms` is reported as a `LookupFailed` warning instead of an error, along with one for `classic-editor` (21 errors, 8 warnings).
 
 ### Key Violations Detected
 

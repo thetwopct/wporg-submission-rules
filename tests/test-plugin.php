@@ -173,3 +173,25 @@ class SpamGuard {
         return $data;
     }
 }
+
+// Fully qualified calls such as \__() are a single token in PHP_CodeSniffer 4
+class FullyQualified {
+    // VIOLATION: Translation function with variable
+    public function translate($text) {
+        return \__($text, 'text-domain');
+    }
+
+    // WARNING: read-increment-write on a transient is not atomic
+    public function rate_limit($signal_key) {
+        $count = (int) \get_transient($signal_key);
+        \set_transient($signal_key, $count + 1, 10 * MINUTE_IN_SECONDS);
+    }
+}
+
+// VIOLATION: define with short prefix
+\define('XYZ_CONSTANT', 'value');
+
+// VIOLATION: Function wrapped in function_exists (anti-pattern)
+if (!\function_exists('myplugin_fq_helper')) {
+    function myplugin_fq_helper() {}
+}

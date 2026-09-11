@@ -20,7 +20,7 @@ Use a local path repository in your test project's `composer.json`:
     }
   ],
   "require-dev": {
-    "squizlabs/php_codesniffer": "^3.9.0",
+    "squizlabs/php_codesniffer": "^3.13.6 || ^4.0.2",
     "thetwopct/wp-org-submission-rules": "@dev"
   }
 }
@@ -112,6 +112,30 @@ wp-env run cli --env-cwd=wp-content/plugins/your-plugin vendor/bin/phpcs --stand
 
 **Pros:** Matches production environment, consistent with wp-env workflow
 **Cons:** More complex setup, slower iteration
+
+## PHP_CodeSniffer 3 and 4
+
+The sniffs support PHP 7.2+ and PHP_CodeSniffer 3.13.6+ and 4.0.2+ (earlier versions have a security vulnerability, CVE-2026-67434). The main difference between them is how namespaced names are tokenized:
+
+- PHP_CodeSniffer 3 splits `\wp_remote_get` into `T_NS_SEPARATOR` and `T_STRING`, and `Foo\Bar` into `T_STRING`, `T_NS_SEPARATOR`, `T_STRING`
+- PHP_CodeSniffer 4 keeps them as single `T_NAME_FULLY_QUALIFIED` and `T_NAME_QUALIFIED` tokens
+
+A sniff that looks for a global function call should register both `T_STRING` and `T_NAME_FULLY_QUALIFIED`, and read the name with `WPOrgSubmissionRules\Helpers\GlobalName::get()`. It returns `wp_remote_get` for either version, and `null` for namespaced functions like `Foo\wp_remote_get()`.
+
+Use the `Tokens::$emptyTokens` style properties, not the `Tokens::EMPTY_TOKENS` constants, which don't exist in PHP_CodeSniffer 3.
+
+Helper classes go in `WPOrgSubmissionRules/Helpers/`. They're loaded by `WPOrgSubmissionRules/autoload.php`, because PHP_CodeSniffer doesn't autoload a standard's own classes when it's referenced from another ruleset.
+
+To test against both versions, install each into its own directory and run the tests with each, from the repo root:
+
+```bash
+composer require squizlabs/php_codesniffer:^3 --working-dir=/tmp/phpcs3
+composer require squizlabs/php_codesniffer:^4 --working-dir=/tmp/phpcs4
+/tmp/phpcs3/vendor/bin/phpcs --standard=./WPOrgSubmissionRules tests/test-plugin.php
+/tmp/phpcs4/vendor/bin/phpcs --standard=./WPOrgSubmissionRules tests/test-plugin.php
+```
+
+The results should match, apart from the column of fully qualified calls.
 
 ## Common Issues & Solutions
 
