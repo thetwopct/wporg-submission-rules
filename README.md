@@ -1,4 +1,6 @@
-# WordPress.org-specific plugin review code sniffs
+# WPOrg Submission Rules
+
+Unofficial PHP_CodeSniffer rules for checks commonly applied during WordPress.org Plugin Directory review.
 
 When submitting a plugin to the WordPress.org repo, there are several checks that the plugin review team apply to your plugin, but which are not fully covered by WordPress Coding Standards or included in the [Plugin Check (PCP)](https://wordpress.org/plugins/plugin-check/) plugin.
 
@@ -12,11 +14,24 @@ If you use these sniffs and indeed PHP_CodeSniffer in your projects I would urge
 
 Requires PHP 7.2 or later, and PHP_CodeSniffer 3.13.6+ or 4.0.2+.
 
-The sniffs have been released on to [Packagist](https://packagist.org/packages/thetwopct/wp-org-submission-rules), so installation should be as simple as running:
+The sniffs are available on [Packagist](https://packagist.org/packages/thetwopct/wporg-submission-rules), so installation is as simple as running:
 
 ```
-composer require thetwopct/wp-org-submission-rules --dev
+composer require thetwopct/wporg-submission-rules --dev
 ```
+
+Composer may ask you to allow `dealerdirect/phpcodesniffer-composer-installer`. This installer registers the ruleset with PHP_CodeSniffer.
+
+### Migrating from 1.x
+
+Version 2.0 uses the corrected Composer package name. Replace the old package with the new one:
+
+```bash
+composer remove --dev thetwopct/wp-org-submission-rules --no-update
+composer require --dev thetwopct/wporg-submission-rules:^2.0 --with-all-dependencies
+```
+
+The ruleset name and sniff codes remain unchanged, so existing `WPOrgSubmissionRules` references in PHPCS configuration do not need updating.
 
 You can then check that the ruleset (WPOrgSubmissionRules) is now installed:
 
@@ -198,8 +213,8 @@ Some review issues are already detected by the [WordPress Coding Standards](http
 
 ## Active development
 
-This package is under constant development and will be updated to reflect new checks that the Plugin Team review process throws at us. If you have feedback on these sniffs and want us to add new custom sniffs, [please open an issue](https://github.com/thetwopct/wp-org-submission-rules/issues). This file can be found in our [GitHub](https://github.com/thetwopct/wp-org-submission-rules) repo.
+This package is under constant development and will be updated to reflect new checks that the Plugin Team review process throws at us. If you have feedback on these sniffs and want us to add new custom sniffs, [please open an issue](https://github.com/thetwopct/wporg-submission-rules/issues). This file can be found in our [GitHub](https://github.com/thetwopct/wporg-submission-rules) repo.
 
 ## Disclaimer
 
-This plugin is independently made and is not affiliated with WordPress.org. The WordPress® trademarks are the intellectual property of the WordPress Foundation. Uses of the WordPress® names in this repo are for identification purposes only and do not imply an endorsement by WordPress Foundation.
+This package is independently made and is not affiliated with WordPress.org. The WordPress® trademarks are the intellectual property of the WordPress Foundation. Uses of the WordPress® names in this repository are for identification purposes only and do not imply endorsement by the WordPress Foundation.

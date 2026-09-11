@@ -13,7 +13,7 @@ Use a local path repository in your test project's `composer.json`:
   "repositories": [
     {
       "type": "path",
-      "url": "../wp-org-submission-rules",
+      "url": "../wporg-submission-rules",
       "options": {
         "symlink": true
       }
@@ -21,7 +21,7 @@ Use a local path repository in your test project's `composer.json`:
   ],
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.13.6 || ^4.0.2",
-    "thetwopct/wp-org-submission-rules": "@dev"
+    "thetwopct/wporg-submission-rules": "@dev"
   }
 }
 ```
@@ -40,7 +40,7 @@ composer install
 Configure phpcs globally to know about your local sniffs:
 
 ```bash
-phpcs --config-set installed_paths /path/to/wp-org-submission-rules
+phpcs --config-set installed_paths /path/to/wporg-submission-rules
 phpcs -i  # Verify WPOrgSubmissionRules appears
 ```
 
@@ -60,7 +60,7 @@ Create `.phpcs.xml` in your test project:
 ```xml
 <?xml version="1.0"?>
 <ruleset name="My Plugin">
-    <config name="installed_paths" value="/path/to/wp-org-submission-rules"/>
+    <config name="installed_paths" value="/path/to/wporg-submission-rules"/>
     <rule ref="WPOrgSubmissionRules"/>
 </ruleset>
 ```
@@ -81,7 +81,7 @@ For wp-env projects, mount the sniffs directory and run inside Docker:
 ```json
 {
   "mappings": {
-    "wp-content/mu-plugins/wporg-sniffs": "../wp-org-submission-rules"
+    "wp-content/mu-plugins/wporg-sniffs": "../wporg-submission-rules"
   }
 }
 ```
@@ -99,7 +99,7 @@ For wp-env projects, mount the sniffs directory and run inside Docker:
     }
   ],
   "require-dev": {
-    "thetwopct/wp-org-submission-rules": "@dev"
+    "thetwopct/wporg-submission-rules": "@dev"
   }
 }
 ```
@@ -143,8 +143,8 @@ The results should match, apart from the column of fully qualified calls.
 **Error:** `The url supplied for the path (...) repository does not exist`
 
 **Solutions:**
-- Verify path exists: `ls -la /path/to/wp-org-submission-rules/composer.json`
-- Use relative paths: `../wp-org-submission-rules`
+- Verify path exists: `ls -la /path/to/wporg-submission-rules/composer.json`
+- Use relative paths: `../wporg-submission-rules`
 - For wp-env: ensure mapping exists and restart: `wp-env destroy && wp-env start`
 
 ### Minimum Stability Error
@@ -152,7 +152,7 @@ The results should match, apart from the column of fully qualified calls.
 
 **Solution:** Use `@dev` instead of `*`:
 ```json
-"thetwopct/wp-org-submission-rules": "@dev"
+"thetwopct/wporg-submission-rules": "@dev"
 ```
 
 ### Changes Not Reflecting

@@ -155,7 +155,7 @@ class RequiresPluginsSniff implements Sniff
      */
     private function lookup($slug)
     {
-        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wp-org-submission-rules-requires-plugins.json';
+        $cacheFile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wporg-submission-rules-requires-plugins.json';
 
         if ($this->cache === null) {
             $cached      = @file_get_contents($cacheFile);
@@ -203,7 +203,7 @@ class RequiresPluginsSniff implements Sniff
                 'timeout'       => self::TIMEOUT,
                 // The API answers unknown and closed plugins with a 404, and the body says which.
                 'ignore_errors' => true,
-                'user_agent'    => 'wp-org-submission-rules',
+                'user_agent'    => 'wporg-submission-rules',
             ],
         ]);
 

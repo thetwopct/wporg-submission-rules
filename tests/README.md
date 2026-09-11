@@ -141,7 +141,7 @@ The main plugin file is found the same way as for `Tested up to`. Its `Requires 
 - `ClosedInDirectory` (error) - the plugin has been closed on WordPress.org.
 - `LookupFailed` (warning) - the WordPress.org API couldn't be reached or gave an unexpected answer. After the first failure, the other slugs aren't looked up, so an offline run doesn't wait for each one to time out.
 
-The lookup only runs when a main plugin file has a `Requires Plugins` header, using the WordPress.org plugin information API with a 5 second timeout. Results are cached for a day in `wp-org-submission-rules-requires-plugins.json` in the system temp directory. Failed lookups aren't cached. To skip the lookup and only check the slug format:
+The lookup only runs when a main plugin file has a `Requires Plugins` header, using the WordPress.org plugin information API with a 5 second timeout. Results are cached for a day in `wporg-submission-rules-requires-plugins.json` in the system temp directory. Failed lookups aren't cached. To skip the lookup and only check the slug format:
 
 ```xml
 <rule ref="WPOrgSubmissionRules.PluginHeader.RequiresPlugins">
@@ -271,4 +271,4 @@ function wp_my_custom_function() {
 
 ## Contributing
 
-Found a false positive or want to add a new rule? Please [open an issue](https://github.com/thetwopct/wp-org-submission-rules/issues) on GitHub.
+Found a false positive or want to add a new rule? Please [open an issue](https://github.com/thetwopct/wporg-submission-rules/issues) on GitHub.
