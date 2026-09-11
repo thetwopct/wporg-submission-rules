@@ -24,32 +24,45 @@ A sample WordPress plugin file containing **deliberate violations** to test all 
 
 #### Prefix Length Violations
 - Short prefixes (< 4 characters): `BFG_`, `bfg_`, `ABC_`
-- Examples from lines 9, 12, 28, 40, 64, 99
+- Examples from lines 10, 13, 29, 41, 65, 100
 
 #### Reserved Prefix Violations
-- `wp_` prefix (reserved for WordPress core) - line 23
-- Single underscore `_` prefix - line 102
+- `wp_` prefix (reserved for WordPress core) - line 24
+- Single underscore `_` prefix - line 103
 
 #### Security Violations
-- Missing nonce checks on `$_POST` usage - lines 41-42
-- Missing nonce checks on `$_REQUEST` usage - lines 115-116
-- `$_GET` used outside function (performance issue) - line 48
+- Missing nonce checks on `$_POST` usage - lines 42-43
+- Missing nonce checks on `$_REQUEST` usage - lines 116-117
+- `$_GET` used outside function (performance issue) - line 49
 
 #### Anti-Pattern Violations
-- `if (!function_exists())` wrapper - line 33
+- `if (!function_exists())` wrapper - line 34
 
 #### Inline Tags Violations
-- Inline `<script>` tag - line 79
-- Inline `<style>` tag - line 84
+- Inline `<script>` tag - line 80
+- Inline `<style>` tag - line 85
 
 #### Translation Function Violations
-- Variable used in `__()` function instead of string literal - line 90
+- Variable used in `__()` function instead of string literal - line 91
+
+#### Plugin Header Violations
+- `Tested up to` declared in the main plugin file header - line 6
+
+#### External Services Violations
+Checked against the `== External services ==` section of `readme.txt` in this directory.
+- `substack.com` not documented in the readme - line 131
+- `mailgun.net` documented without terms and privacy links (warning) - line 134
+
+#### Concurrency Warnings
+- Read-increment-write on a transient (rate limit) - line 152
+- Check-then-set on a transient (duplicate lock) - line 161
+- Cache refill on a transient is OK and not flagged - line 170
 
 ## Expected Test Results
 
 When running the sniffs on `test-plugin.php`, you should see approximately:
-- **19 errors**
-- **2 warnings**
+- **21 errors**
+- **5 warnings**
 
 ### Key Violations Detected
 
@@ -60,6 +73,9 @@ When running the sniffs on `test-plugin.php`, you should see approximately:
 5. ✅ **Function Exists Anti-pattern**: Using `if (!function_exists())` wrapper
 6. ✅ **Inline Tags**: Both `<script>` and `<style>` tags
 7. ✅ **Translation Issues**: Variable in `__()` function
+8. ✅ **Tested up to Header**: Declared in the plugin header instead of readme.txt
+9. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
+10. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
 
 ## Testing on Your Own Plugin
 
@@ -110,6 +126,39 @@ Any usage of `$_POST`, `$_GET`, or `$_REQUEST` should have a corresponding nonce
 ### 4. Function Exists Wrapper
 Don't wrap your functions in `if (!function_exists())`. If another plugin loads first with the same function name, your plugin will silently fail. Use unique prefixes instead.
 
+### 5. Tested up to Header
+The main plugin file is found the same way WordPress does it: the file with a `Plugin Name:` header in its first 8 KB. Any `Tested up to:` header in that file is flagged. To suppress it, put `// phpcs:disable` before the header docblock, because `phpcs:ignore` inside a docblock is not read.
+
+### 6. External Services
+The plugin root is the nearest parent directory containing the main plugin file, and the readme is `readme.txt` (or `readme.md`) in that directory. The section can be titled `External services`, `Third party services` or `3rd party services`.
+
+Remote requests are calls to `wp_remote_*()`, `wp_safe_remote_*()`, `wp_remote_fopen()`, `download_url()`, `curl_init()`, `fsockopen()`, or `file_get_contents()` with a URL. In files that make one, every URL in a string is checked:
+- `MissingReadme` / `MissingSection` (error) - no readme, or no `External services` section. Reported at each remote request.
+- `UndocumentedService` (error) - the URL's domain isn't mentioned in the section. Mention it by domain (`substack.com`) or name (`Substack`).
+- `MissingPolicyLinks` (warning) - the service is mentioned, but is missing a line with a URL and "terms" (or "tos", "legal", "conditions"), or a line with a URL and "privacy". With a `= Service name =` subheading per service, only that service's subheading is checked.
+
+Domains are matched on their registrable domain, so `api.substack.com` needs `substack.com`. A readme that only says "Google Maps" will not match `maps.googleapis.com`, so name the domain.
+
+Known limitations:
+- JavaScript `fetch()` calls are not checked, as the ruleset only checks PHP files
+- URLs defined in one file and requested from another are not matched, although a missing section is still reported
+- Requests made through HTTP libraries such as Guzzle are not detected
+- It can't check that the terms and privacy links exist and have the proper content, which reviewers do check
+
+### 7. Non-atomic Transients
+For each `set_transient()` / `set_site_transient()`, the sniff looks for an earlier read of the same key (written the same way) in the same function:
+- `ReadModifyWrite` (warning) - the value written is derived from the value read: `$count + 1`, `$count++`, `$count += 1`, `$count = $count + 1`, `$list[] = $item`, or `get_transient($key) + 1`
+- `CheckThenSet` (warning) - the value read is used in an `if` condition, and a fixed flag is written: `1`, `true`, `'locked'` or `time()`
+
+To fix them:
+- **Lock** - `wp_cache_add()` with a persistent object cache (`wp_using_ext_object_cache()`), or an `INSERT IGNORE` into the options table and check a row was inserted (see `WP_Upgrader::create_lock()`). `add_option()` is not a safe lock: it checks whether the option exists before inserting, and its insert overwrites rather than fails, so two simultaneous requests can both succeed.
+- **Counter** - `wp_cache_incr()` with a persistent object cache, or an atomic `UPDATE ... SET option_value = option_value + 1`
+
+Known limitations:
+- "Only do this once" flags (e.g. an admin notice) are flagged as `CheckThenSet`, even though a race there is harmless
+- A key read in one function and written in another, or built differently at each call, is not matched
+- Options, meta and object cache values have the same race, but are not checked
+
 ## What's NOT Checked
 
 The sniffs intentionally skip:
@@ -117,6 +166,10 @@ The sniffs intentionally skip:
 - **Magic methods** - `__construct()`, `__call()`, etc. are allowed
 - **Translation functions** - `__()`, `_e()`, etc. are excluded from prefix checks
 - **Namespaced classes** - Classes inside namespaces don't require underscored prefixes
+- **Other plugin files** - `Tested up to` is only checked in the main plugin file
+- **Plain links** - URLs in files that don't make remote requests aren't checked against the readme
+- **WordPress.org and local URLs** - `wordpress.org`, `example.com`, `localhost`, `.test`/`.local` domains and private IPs never need documenting
+- **Cache refills** - Reading a transient, then writing freshly computed data back to it, isn't flagged as a race
 
 ## Running Specific Sniffs
 
@@ -142,11 +195,14 @@ phpcs -e --standard=WPOrgSubmissionRules
 ```
 
 Current sniffs:
+- `WPOrgSubmissionRules.Concurrency.NonAtomicTransient`
+- `WPOrgSubmissionRules.ExternalServices.Disclosure`
 - `WPOrgSubmissionRules.ForbiddenTags.ForbiddenInlineTags`
 - `WPOrgSubmissionRules.Internationalization.TranslationFunctionStringLiteral`
 - `WPOrgSubmissionRules.Naming.FunctionExistsWrapper`
 - `WPOrgSubmissionRules.Naming.PrefixLength`
 - `WPOrgSubmissionRules.Naming.UniqueName`
+- `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
 - `WPOrgSubmissionRules.Security.NonceCheck`
 
 ## Troubleshooting

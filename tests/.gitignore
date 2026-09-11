@@ -6,4 +6,5 @@ test-*.php
 *.log
 *.xml
 *.txt
+!readme.txt
 

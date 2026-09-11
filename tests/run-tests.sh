@@ -60,6 +60,9 @@ else
     echo "  - Function exists wrapper anti-pattern"
     echo "  - Inline script/style tags"
     echo "  - Translation functions with variables"
+    echo "  - \"Tested up to\" in the plugin header"
+    echo "  - External services not documented in readme.txt"
+    echo "  - Non-atomic transient updates (race conditions)"
 fi
 
 echo ""

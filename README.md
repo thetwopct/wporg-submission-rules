@@ -50,6 +50,16 @@ One of the rules looks for unique names of variables, and you can add a prefix i
 </rule>
 ```
 
+The external services rule ignores WordPress.org, `example.com` and local URLs. You can exclude other domains (this replaces the default list):
+
+```
+<rule ref="WPOrgSubmissionRules.ExternalServices.Disclosure">
+	<properties>
+		<property name="excludedDomains" type="array" value="wordpress.org,w.org,wp.org,example.com,mysite.com" />
+	</properties>
+</rule>
+```
+
 ## What the sniffs detect:
 
 Here are some of the review issues from WordPress.org that these sniffs try to make sure you avoid:
@@ -116,6 +126,37 @@ Also warns about using these superglobals outside of functions (performance issu
 Using `if (!function_exists('name')) { function name() {...} }` is an anti-pattern. If another plugin has a function with the same name and loads first, your plugin will silently fail. Use unique prefixes instead.
 
 **Sniff**: `WPOrgSubmissionRules.Naming.FunctionExistsWrapper`
+
+### 9) Declare "Tested up to" only in your readme file
+
+"Tested up to" is a readme.txt header, not a plugin header. If it's also declared in the main PHP file's plugin headers, that value may take precedence over the one in your readme, so WordPress.org can display a compatibility version you did not intend.
+
+The sniff finds the main plugin file the same way WordPress does (a `Plugin Name:` header in the first 8 KB) and flags any `Tested up to:` header in it. Other files are ignored.
+
+**Sniff**: `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
+
+### 10) Undocumented use of a 3rd party / external service
+
+Plugins can use external services, but each one must be documented in an `== External services ==` section of your readme: what the service is and what it is used for, what data is sent and when, and links to its terms of service and privacy policy. This applies even if you run the service yourself.
+
+In any file that makes a remote request (`wp_remote_get()`, `wp_safe_remote_post()`, `curl_init()`, etc.), the sniff flags:
+
+- A missing readme, or a readme with no `External services` section
+- URLs to domains that aren't mentioned in that section
+- Services mentioned without terms of service and privacy policy links (warning)
+
+**Sniff**: `WPOrgSubmissionRules.ExternalServices.Disclosure`
+
+### 11) Non-atomic transient updates (race conditions)
+
+Reading a transient and then writing it back is not atomic, so simultaneous requests can all read the same value before any of them writes. Reviewers flag this under "Other possible issues" for:
+
+- Rate limits: `$count = get_transient($key)` then `set_transient($key, $count + 1)` lets parallel requests exceed the limit
+- Locks: `if (get_transient($key))` then `set_transient($key, 1)` lets parallel requests past the lock
+
+Use an atomic operation instead, such as `wp_cache_add()` or `wp_cache_incr()` with a persistent object cache, or an atomic database query. These are reported as warnings, and the usual cache refill pattern is not flagged.
+
+**Sniff**: `WPOrgSubmissionRules.Concurrency.NonAtomicTransient`
 
 ## Active development
 

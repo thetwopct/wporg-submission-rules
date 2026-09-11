@@ -20,4 +20,13 @@
 
     <!-- Internationalization Rules -->
     <rule ref="WPOrgSubmissionRules.Internationalization.TranslationFunctionStringLiteral"/>
+
+    <!-- Plugin Header Rules -->
+    <rule ref="WPOrgSubmissionRules.PluginHeader.TestedUpTo"/>
+
+    <!-- External Services Rules -->
+    <rule ref="WPOrgSubmissionRules.ExternalServices.Disclosure"/>
+
+    <!-- Concurrency Rules -->
+    <rule ref="WPOrgSubmissionRules.Concurrency.NonAtomicTransient"/>
 </ruleset>

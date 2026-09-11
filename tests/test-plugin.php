@@ -3,6 +3,7 @@
  * Plugin Name: Test Plugin for WP.org Submission Rules
  * Description: This file contains deliberate violations to test the sniffs
  * Version: 1.0
+ * Tested up to: 6.8
  */
 
 // VIOLATION: Short prefix (3 characters) in define
@@ -119,4 +120,55 @@ function handle_request() {
 
 function do_something($action) {
     // dummy function
+}
+
+// External services, checked against tests/readme.txt
+class WeatherClient {
+    // OK: documented in readme.txt with terms and privacy links
+    const WEATHER_ENDPOINT = 'https://api.openweathermap.org/data/2.5/weather';
+
+    // VIOLATION: substack.com is not documented in readme.txt
+    const SIGNUP_ENDPOINT = 'https://substack.com/api/v1/reader/signup/pub';
+
+    // WARNING: mailgun.net is documented in readme.txt, but without terms and privacy links
+    const MAIL_ENDPOINT = 'https://api.mailgun.net/v3/messages';
+
+    // OK: WordPress.org does not need documenting
+    const PLUGINS_API = 'https://api.wordpress.org/plugins/info/1.2/';
+
+    public function fetch() {
+        return wp_remote_get(self::WEATHER_ENDPOINT);
+    }
+}
+
+// Race conditions on transients
+class SpamGuard {
+    // WARNING: read-increment-write on a transient is not atomic
+    public function rate_limit($signal_key) {
+        $count = (int) get_transient($signal_key);
+        if ($count >= 5) {
+            return false;
+        }
+        set_transient($signal_key, $count + 1, 10 * MINUTE_IN_SECONDS);
+        return true;
+    }
+
+    // WARNING: check-then-set lock on a transient is not atomic
+    public function lock($duplicate_key) {
+        if (get_transient($duplicate_key)) {
+            return false;
+        }
+        set_transient($duplicate_key, 1, MINUTE_IN_SECONDS);
+        return true;
+    }
+
+    // OK: cache refill, a race here is harmless
+    public function cached_data() {
+        $data = get_transient('myplugin_data');
+        if (false === $data) {
+            $data = array('fresh' => true);
+            set_transient('myplugin_data', $data, HOUR_IN_SECONDS);
+        }
+        return $data;
+    }
 }
