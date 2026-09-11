@@ -13,7 +13,6 @@
     <rule ref="WPOrgSubmissionRules.Naming.FunctionExistsWrapper"/>
 
     <!-- Security Rules -->
-    <rule ref="WPOrgSubmissionRules.Security.NonceCheck"/>
     <rule ref="WPOrgSubmissionRules.Security.DirectFileAccess"/>
 
     <!-- Forbidden Tags -->

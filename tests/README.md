@@ -31,9 +31,6 @@ A sample WordPress plugin file containing **deliberate violations** to test all 
 - Single underscore `_` prefix - line 103
 
 #### Security Violations
-- Missing nonce checks on `$_POST` usage - lines 42-43
-- Missing nonce checks on `$_REQUEST` usage - lines 116-117
-- `$_GET` used outside function (performance issue) - line 49
 - No direct file access check before the first code - line 10
 
 #### Anti-Pattern Violations
@@ -62,22 +59,20 @@ Checked against the `== External services ==` section of `readme.txt` in this di
 ## Expected Test Results
 
 When running the sniffs on `test-plugin.php`, you should see approximately:
-- **22 errors**
-- **5 warnings**
+- **18 errors**
+- **4 warnings**
 
 ### Key Violations Detected
 
 1. ✅ **Short Prefixes**: `BFG`, `bfg`, `ABC`, `my`, `add`, `do` (all < 4 chars)
 2. ✅ **Reserved Prefixes**: `wp_`, `_`
-3. ✅ **Missing Nonce Checks**: 4 instances of `$_POST`/`$_REQUEST` without verification
-4. ✅ **Performance Issue**: `$_GET` used outside of function
-5. ✅ **Function Exists Anti-pattern**: Using `if (!function_exists())` wrapper
-6. ✅ **Inline Tags**: Both `<script>` and `<style>` tags
-7. ✅ **Translation Issues**: Variable in `__()` function
-8. ✅ **Tested up to Header**: Declared in the plugin header instead of readme.txt
-9. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
-10. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
-11. ✅ **Direct File Access**: No `ABSPATH` check in a file that runs code
+3. ✅ **Function Exists Anti-pattern**: Using `if (!function_exists())` wrapper
+4. ✅ **Inline Tags**: Both `<script>` and `<style>` tags
+5. ✅ **Translation Issues**: Variable in `__()` function
+6. ✅ **Tested up to Header**: Declared in the plugin header instead of readme.txt
+7. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
+8. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
+9. ✅ **Direct File Access**: No `ABSPATH` check in a file that runs code
 
 ## Testing on Your Own Plugin
 
@@ -119,19 +114,13 @@ WordPress reserves these prefixes:
 - `_` (single underscore) - for WordPress internal use
 - `__` (double underscore) - for magic methods (allowed in functions)
 
-### 3. Nonce Check
-Any usage of `$_POST`, `$_GET`, or `$_REQUEST` should have a corresponding nonce verification:
-- `wp_verify_nonce()`
-- `check_ajax_referer()`
-- `check_admin_referer()`
-
-### 4. Function Exists Wrapper
+### 3. Function Exists Wrapper
 Don't wrap your functions in `if (!function_exists())`. If another plugin loads first with the same function name, your plugin will silently fail. Use unique prefixes instead.
 
-### 5. Tested up to Header
+### 4. Tested up to Header
 The main plugin file is found the same way WordPress does it: the file with a `Plugin Name:` header in its first 8 KB. Any `Tested up to:` header in that file is flagged. To suppress it, put `// phpcs:disable` before the header docblock, because `phpcs:ignore` inside a docblock is not read.
 
-### 6. External Services
+### 5. External Services
 The plugin root is the nearest parent directory containing the main plugin file, and the readme is `readme.txt` (or `readme.md`) in that directory. The section can be titled `External services`, `Third party services` or `3rd party services`.
 
 Remote requests are calls to `wp_remote_*()`, `wp_safe_remote_*()`, `wp_remote_fopen()`, `download_url()`, `curl_init()`, `fsockopen()`, or `file_get_contents()` with a URL. In files that make one, every URL in a string is checked:
@@ -147,7 +136,7 @@ Known limitations:
 - Requests made through HTTP libraries such as Guzzle are not detected
 - It can't check that the terms and privacy links exist and have the proper content, which reviewers do check
 
-### 7. Non-atomic Transients
+### 6. Non-atomic Transients
 For each `set_transient()` / `set_site_transient()`, the sniff looks for an earlier read of the same key (written the same way) in the same function:
 - `ReadModifyWrite` (warning) - the value written is derived from the value read: `$count + 1`, `$count++`, `$count += 1`, `$count = $count + 1`, `$list[] = $item`, or `get_transient($key) + 1`
 - `CheckThenSet` (warning) - the value read is used in an `if` condition, and a fixed flag is written: `1`, `true`, `'locked'` or `time()`
@@ -161,7 +150,7 @@ Known limitations:
 - A key read in one function and written in another, or built differently at each call, is not matched
 - Options, meta and object cache values have the same race, but are not checked
 
-### 8. Direct File Access
+### 7. Direct File Access
 The guard can come after the opening tag, comments, `declare()`, the `namespace` line and `use` imports, but must come before any other code:
 - `Missing` (error) - the file runs code when loaded and has no guard. Reported at the first line of code.
 - `Misplaced` (error) - there is a guard, but code runs before it. Reported at the first line of code.
@@ -194,9 +183,6 @@ To test only specific sniffs:
 # Only test prefix length
 phpcs --standard=WPOrgSubmissionRules --sniffs=WPOrgSubmissionRules.Naming.PrefixLength test-plugin.php
 
-# Only test nonce checks
-phpcs --standard=WPOrgSubmissionRules --sniffs=WPOrgSubmissionRules.Security.NonceCheck test-plugin.php
-
 # Only test inline tags
 phpcs --standard=WPOrgSubmissionRules --sniffs=WPOrgSubmissionRules.ForbiddenTags.ForbiddenInlineTags test-plugin.php
 ```
@@ -219,7 +205,6 @@ Current sniffs:
 - `WPOrgSubmissionRules.Naming.UniqueName`
 - `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
 - `WPOrgSubmissionRules.Security.DirectFileAccess`
-- `WPOrgSubmissionRules.Security.NonceCheck`
 
 ## Troubleshooting
 

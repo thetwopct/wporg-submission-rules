@@ -56,7 +56,6 @@ else
     echo "Expected violations should include:"
     echo "  - Short prefixes (less than 4 characters)"
     echo "  - Reserved prefixes (wp_, _, __)"
-    echo "  - Missing nonce checks"
     echo "  - Function exists wrapper anti-pattern"
     echo "  - Inline script/style tags"
     echo "  - Translation functions with variables"

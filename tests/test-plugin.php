@@ -37,7 +37,7 @@ if (!function_exists('my_helper_function')) {
     }
 }
 
-// VIOLATION: $_POST without nonce check
+// Not checked here: $_POST without a nonce check (see WPCS WordPress.Security.NonceVerification)
 function bfg_process_form() {
     if (isset($_POST['submit'])) {
         $value = $_POST['value'];
@@ -45,12 +45,12 @@ function bfg_process_form() {
     }
 }
 
-// VIOLATION: $_GET outside of function (performance issue)
+// Not checked here: $_GET used outside of a function
 if (isset($_GET['debug'])) {
     error_log('Debug mode on');
 }
 
-// OK: Proper nonce check
+// OK: Nonce check before processing form data
 function properly_save_post() {
     if (!isset($_POST['my_nonce']) || !wp_verify_nonce($_POST['my_nonce'], 'my_action')) {
         return;
@@ -111,7 +111,7 @@ class Settings {
     // This is OK because it's namespaced
 }
 
-// VIOLATION: $_REQUEST without nonce
+// Not checked here: $_REQUEST without a nonce check (see WPCS WordPress.Security.NonceVerification)
 function handle_request() {
     if (isset($_REQUEST['action'])) {
         do_something($_REQUEST['action']);

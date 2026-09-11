@@ -55,7 +55,13 @@ The external services rule ignores WordPress.org, `example.com` and local URLs. 
 ```
 <rule ref="WPOrgSubmissionRules.ExternalServices.Disclosure">
 	<properties>
-		<property name="excludedDomains" type="array" value="wordpress.org,w.org,wp.org,example.com,mysite.com" />
+		<property name="excludedDomains" type="array">
+			<element value="wordpress.org"/>
+			<element value="w.org"/>
+			<element value="wp.org"/>
+			<element value="example.com"/>
+			<element value="mysite.com"/>
+		</property>
 	</properties>
 </rule>
 ```
@@ -109,25 +115,13 @@ WordPress reserves certain prefixes for core functionality:
 
 **Sniff**: `WPOrgSubmissionRules.Naming.PrefixLength`
 
-### 7) Security: Nonce checks required
-
-Any usage of `$_POST`, `$_GET`, or `$_REQUEST` must be accompanied by proper nonce verification using:
-
-- `wp_verify_nonce()`
-- `check_ajax_referer()`
-- `check_admin_referer()`
-
-Also warns about using these superglobals outside of functions (performance issue).
-
-**Sniff**: `WPOrgSubmissionRules.Security.NonceCheck`
-
-### 8) Anti-pattern: function_exists() wrapper
+### 7) Anti-pattern: function_exists() wrapper
 
 Using `if (!function_exists('name')) { function name() {...} }` is an anti-pattern. If another plugin has a function with the same name and loads first, your plugin will silently fail. Use unique prefixes instead.
 
 **Sniff**: `WPOrgSubmissionRules.Naming.FunctionExistsWrapper`
 
-### 9) Declare "Tested up to" only in your readme file
+### 8) Declare "Tested up to" only in your readme file
 
 "Tested up to" is a readme.txt header, not a plugin header. If it's also declared in the main PHP file's plugin headers, that value may take precedence over the one in your readme, so WordPress.org can display a compatibility version you did not intend.
 
@@ -135,7 +129,7 @@ The sniff finds the main plugin file the same way WordPress does (a `Plugin Name
 
 **Sniff**: `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
 
-### 10) Undocumented use of a 3rd party / external service
+### 9) Undocumented use of a 3rd party / external service
 
 Plugins can use external services, but each one must be documented in an `== External services ==` section of your readme: what the service is and what it is used for, what data is sent and when, and links to its terms of service and privacy policy. This applies even if you run the service yourself.
 
@@ -147,7 +141,7 @@ In any file that makes a remote request (`wp_remote_get()`, `wp_safe_remote_post
 
 **Sniff**: `WPOrgSubmissionRules.ExternalServices.Disclosure`
 
-### 11) Non-atomic transient updates (race conditions)
+### 10) Non-atomic transient updates (race conditions)
 
 Reading a transient and then writing it back is not atomic, so simultaneous requests can all read the same value before any of them writes. Reviewers flag this under "Other possible issues" for:
 
@@ -158,7 +152,7 @@ Use an atomic operation instead, such as `wp_cache_add()` or `wp_cache_incr()` w
 
 **Sniff**: `WPOrgSubmissionRules.Concurrency.NonAtomicTransient`
 
-### 12) Allowing direct file access to plugin files
+### 11) Allowing direct file access to plugin files
 
 Any PHP file that runs code when loaded (function calls, creating class instances, including other files, output) can be requested directly in a browser, outside of WordPress. Prevent this by adding the following after the `<?php` tag and any namespace declaration, before any other code:
 
@@ -169,6 +163,12 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 `defined( 'ABSPATH' ) || exit;` and other constants such as `WPINC` or `WP_UNINSTALL_PLUGIN` also work. Files that only contain class or function definitions don't need it.
 
 **Sniff**: `WPOrgSubmissionRules.Security.DirectFileAccess`
+
+## Checks covered by WordPress Coding Standards
+
+Some review issues are already detected by the [WordPress Coding Standards](https://github.com/WordPress/WordPress-Coding-Standards) (WPCS), so this ruleset doesn't duplicate them. Run WPCS alongside this ruleset for:
+
+- **Nonce verification** (`WordPress.Security.NonceVerification`) — processing `$_POST`, `$_GET`, `$_REQUEST` or `$_FILES` data without verifying a nonce. This ruleset had its own `WPOrgSubmissionRules.Security.NonceCheck` sniff, which has been removed. Remove any references to it from your `.phpcs.xml`, as PHPCS stops with an error when a ruleset references a sniff that doesn't exist.
 
 ## Active development
 
