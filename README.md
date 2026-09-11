@@ -158,6 +158,18 @@ Use an atomic operation instead, such as `wp_cache_add()` or `wp_cache_incr()` w
 
 **Sniff**: `WPOrgSubmissionRules.Concurrency.NonAtomicTransient`
 
+### 12) Allowing direct file access to plugin files
+
+Any PHP file that runs code when loaded (function calls, creating class instances, including other files, output) can be requested directly in a browser, outside of WordPress. Prevent this by adding the following after the `<?php` tag and any namespace declaration, before any other code:
+
+```php
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+```
+
+`defined( 'ABSPATH' ) || exit;` and other constants such as `WPINC` or `WP_UNINSTALL_PLUGIN` also work. Files that only contain class or function definitions don't need it.
+
+**Sniff**: `WPOrgSubmissionRules.Security.DirectFileAccess`
+
 ## Active development
 
 This package is under constant development and will be updated to reflect new checks that the Plugin Team review process throws at us. If you have feedback on these sniffs and want us to add new custom sniffs, [please open an issue](https://github.com/thetwopct/wp-org-submission-rules/issues). This file can be found in our [GitHub](https://github.com/thetwopct/wp-org-submission-rules) repo.

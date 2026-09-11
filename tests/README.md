@@ -34,6 +34,7 @@ A sample WordPress plugin file containing **deliberate violations** to test all 
 - Missing nonce checks on `$_POST` usage - lines 42-43
 - Missing nonce checks on `$_REQUEST` usage - lines 116-117
 - `$_GET` used outside function (performance issue) - line 49
+- No direct file access check before the first code - line 10
 
 #### Anti-Pattern Violations
 - `if (!function_exists())` wrapper - line 34
@@ -61,7 +62,7 @@ Checked against the `== External services ==` section of `readme.txt` in this di
 ## Expected Test Results
 
 When running the sniffs on `test-plugin.php`, you should see approximately:
-- **21 errors**
+- **22 errors**
 - **5 warnings**
 
 ### Key Violations Detected
@@ -76,6 +77,7 @@ When running the sniffs on `test-plugin.php`, you should see approximately:
 8. ✅ **Tested up to Header**: Declared in the plugin header instead of readme.txt
 9. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
 10. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
+11. ✅ **Direct File Access**: No `ABSPATH` check in a file that runs code
 
 ## Testing on Your Own Plugin
 
@@ -159,6 +161,17 @@ Known limitations:
 - A key read in one function and written in another, or built differently at each call, is not matched
 - Options, meta and object cache values have the same race, but are not checked
 
+### 8. Direct File Access
+The guard can come after the opening tag, comments, `declare()`, the `namespace` line and `use` imports, but must come before any other code:
+- `Missing` (error) - the file runs code when loaded and has no guard. Reported at the first line of code.
+- `Misplaced` (error) - there is a guard, but code runs before it. Reported at the first line of code.
+
+Accepted guards, with `defined()` (any constant) or `function_exists()`:
+- `if ( ! defined( 'ABSPATH' ) ) exit;`, with or without braces, using `exit`, `die` or `return`. `false === defined( 'ABSPATH' )` also works, and the body can do other things before exiting (e.g. send a 403 header).
+- `defined( 'ABSPATH' ) || exit;` or `defined( 'ABSPATH' ) or die( 'message' );`
+
+Code that runs when loaded includes function calls (including `define()`), `new`, `require`/`include`, variable assignments, `echo`, HTML outside of `<?php` tags and control structures such as `if ( ! class_exists() )`. Command-line scripts that are meant to be run directly, such as build scripts, should be excluded in your phpcs config.
+
 ## What's NOT Checked
 
 The sniffs intentionally skip:
@@ -170,6 +183,8 @@ The sniffs intentionally skip:
 - **Plain links** - URLs in files that don't make remote requests aren't checked against the readme
 - **WordPress.org and local URLs** - `wordpress.org`, `example.com`, `localhost`, `.test`/`.local` domains and private IPs never need documenting
 - **Cache refills** - Reading a transient, then writing freshly computed data back to it, isn't flagged as a race
+- **Definition-only files** - Files that only contain class, interface, trait, enum, function or `const` definitions don't need a direct file access check
+- **Array-only files** - Files that only `return` an array, such as `index.asset.php` build files, don't need a direct file access check
 
 ## Running Specific Sniffs
 
@@ -203,6 +218,7 @@ Current sniffs:
 - `WPOrgSubmissionRules.Naming.PrefixLength`
 - `WPOrgSubmissionRules.Naming.UniqueName`
 - `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
+- `WPOrgSubmissionRules.Security.DirectFileAccess`
 - `WPOrgSubmissionRules.Security.NonceCheck`
 
 ## Troubleshooting

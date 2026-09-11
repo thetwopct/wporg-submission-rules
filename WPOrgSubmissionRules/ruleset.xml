@@ -14,6 +14,7 @@
 
     <!-- Security Rules -->
     <rule ref="WPOrgSubmissionRules.Security.NonceCheck"/>
+    <rule ref="WPOrgSubmissionRules.Security.DirectFileAccess"/>
 
     <!-- Forbidden Tags -->
     <rule ref="WPOrgSubmissionRules.ForbiddenTags.ForbiddenInlineTags"/>

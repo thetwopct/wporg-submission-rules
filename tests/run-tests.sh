@@ -63,6 +63,7 @@ else
     echo "  - \"Tested up to\" in the plugin header"
     echo "  - External services not documented in readme.txt"
     echo "  - Non-atomic transient updates (race conditions)"
+    echo "  - Missing direct file access (ABSPATH) check"
 fi
 
 echo ""
