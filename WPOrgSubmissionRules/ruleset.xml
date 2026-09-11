@@ -23,6 +23,7 @@
 
     <!-- Plugin Header Rules -->
     <rule ref="WPOrgSubmissionRules.PluginHeader.TestedUpTo"/>
+    <rule ref="WPOrgSubmissionRules.PluginHeader.RequiresPlugins"/>
 
     <!-- External Services Rules -->
     <rule ref="WPOrgSubmissionRules.ExternalServices.Disclosure"/>

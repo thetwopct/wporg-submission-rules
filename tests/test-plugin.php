@@ -4,6 +4,7 @@
  * Description: This file contains deliberate violations to test the sniffs
  * Version: 1.0
  * Tested up to: 6.8
+ * Requires Plugins: classic-editor, gravityforms, Gravity Forms
  */
 
 // VIOLATION: Short prefix (3 characters) in define

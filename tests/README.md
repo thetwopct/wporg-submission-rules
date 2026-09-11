@@ -24,43 +24,46 @@ A sample WordPress plugin file containing **deliberate violations** to test all 
 
 #### Prefix Length Violations
 - Short prefixes (< 4 characters): `BFG_`, `bfg_`, `ABC_`
-- Examples from lines 10, 13, 29, 41, 65, 100
+- Examples from lines 11, 14, 30, 42, 66, 101
 
 #### Reserved Prefix Violations
-- `wp_` prefix (reserved for WordPress core) - line 24
-- Single underscore `_` prefix - line 103
+- `wp_` prefix (reserved for WordPress core) - line 25
+- Single underscore `_` prefix - line 104
 
 #### Security Violations
-- No direct file access check before the first code - line 10
+- No direct file access check before the first code - line 11
 
 #### Anti-Pattern Violations
-- `if (!function_exists())` wrapper - line 34
+- `if (!function_exists())` wrapper - line 35
 
 #### Inline Tags Violations
-- Inline `<script>` tag - line 80
-- Inline `<style>` tag - line 85
+- Inline `<script>` tag - line 81
+- Inline `<style>` tag - line 86
 
 #### Translation Function Violations
-- Variable used in `__()` function instead of string literal - line 91
+- Variable used in `__()` function instead of string literal - line 92
 
 #### Plugin Header Violations
 - `Tested up to` declared in the main plugin file header - line 6
+- `Requires Plugins` lists `gravityforms`, which isn't in the WordPress.org plugin directory, and `Gravity Forms`, which isn't a slug - line 7. `classic-editor` is OK.
 
 #### External Services Violations
 Checked against the `== External services ==` section of `readme.txt` in this directory.
-- `substack.com` not documented in the readme - line 131
-- `mailgun.net` documented without terms and privacy links (warning) - line 134
+- `substack.com` not documented in the readme - line 132
+- `mailgun.net` documented without terms and privacy links (warning) - line 135
 
 #### Concurrency Warnings
-- Read-increment-write on a transient (rate limit) - line 152
-- Check-then-set on a transient (duplicate lock) - line 161
-- Cache refill on a transient is OK and not flagged - line 170
+- Read-increment-write on a transient (rate limit) - line 153
+- Check-then-set on a transient (duplicate lock) - line 162
+- Cache refill on a transient is OK and not flagged - line 171
 
 ## Expected Test Results
 
 When running the sniffs on `test-plugin.php`, you should see approximately:
-- **18 errors**
+- **20 errors**
 - **4 warnings**
+
+The `Requires Plugins` check looks slugs up on WordPress.org. Without a network connection, `gravityforms` is reported as a `LookupFailed` warning instead of an error, along with one for `classic-editor` (19 errors, 6 warnings).
 
 ### Key Violations Detected
 
@@ -70,9 +73,10 @@ When running the sniffs on `test-plugin.php`, you should see approximately:
 4. ✅ **Inline Tags**: Both `<script>` and `<style>` tags
 5. ✅ **Translation Issues**: Variable in `__()` function
 6. ✅ **Tested up to Header**: Declared in the plugin header instead of readme.txt
-7. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
-8. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
-9. ✅ **Direct File Access**: No `ABSPATH` check in a file that runs code
+7. ✅ **Requires Plugins Header**: A dependency that isn't on WordPress.org, and a name instead of a slug
+8. ✅ **External Services**: Undocumented service, and a service without terms/privacy links
+9. ✅ **Non-atomic Transients**: Read-increment-write and check-then-set race conditions
+10. ✅ **Direct File Access**: No `ABSPATH` check in a file that runs code
 
 ## Testing on Your Own Plugin
 
@@ -120,7 +124,25 @@ Don't wrap your functions in `if (!function_exists())`. If another plugin loads 
 ### 4. Tested up to Header
 The main plugin file is found the same way WordPress does it: the file with a `Plugin Name:` header in its first 8 KB. Any `Tested up to:` header in that file is flagged. To suppress it, put `// phpcs:disable` before the header docblock, because `phpcs:ignore` inside a docblock is not read.
 
-### 5. External Services
+### 5. Requires Plugins Header
+The main plugin file is found the same way as for `Tested up to`. Its `Requires Plugins:` header is split on commas, and each slug is checked:
+- `InvalidSlug` (error) - not in WordPress.org slug format (lowercase letters, numbers and single hyphens), e.g. `Gravity Forms`, `classic_editor` or `woocommerce/woocommerce.php`. WordPress ignores these.
+- `SelfDependency` (error) - the slug is the plugin's own directory name.
+- `NotInDirectory` (error) - the WordPress.org plugin directory has no plugin with that slug, e.g. a premium plugin such as `gravityforms`.
+- `ClosedInDirectory` (error) - the plugin has been closed on WordPress.org.
+- `LookupFailed` (warning) - the WordPress.org API couldn't be reached or gave an unexpected answer. After the first failure, the other slugs aren't looked up, so an offline run doesn't wait for each one to time out.
+
+The lookup only runs when a main plugin file has a `Requires Plugins` header, using the WordPress.org plugin information API with a 5 second timeout. Results are cached for a day in `wp-org-submission-rules-requires-plugins.json` in the system temp directory. Failed lookups aren't cached. To skip the lookup and only check the slug format:
+
+```xml
+<rule ref="WPOrgSubmissionRules.PluginHeader.RequiresPlugins">
+    <properties>
+        <property name="checkDirectory" value="false"/>
+    </properties>
+</rule>
+```
+
+### 6. External Services
 The plugin root is the nearest parent directory containing the main plugin file, and the readme is `readme.txt` (or `readme.md`) in that directory. The section can be titled `External services`, `Third party services` or `3rd party services`.
 
 Remote requests are calls to `wp_remote_*()`, `wp_safe_remote_*()`, `wp_remote_fopen()`, `download_url()`, `curl_init()`, `fsockopen()`, or `file_get_contents()` with a URL. In files that make one, every URL in a string is checked:
@@ -136,7 +158,7 @@ Known limitations:
 - Requests made through HTTP libraries such as Guzzle are not detected
 - It can't check that the terms and privacy links exist and have the proper content, which reviewers do check
 
-### 6. Non-atomic Transients
+### 7. Non-atomic Transients
 For each `set_transient()` / `set_site_transient()`, the sniff looks for an earlier read of the same key (written the same way) in the same function:
 - `ReadModifyWrite` (warning) - the value written is derived from the value read: `$count + 1`, `$count++`, `$count += 1`, `$count = $count + 1`, `$list[] = $item`, or `get_transient($key) + 1`
 - `CheckThenSet` (warning) - the value read is used in an `if` condition, and a fixed flag is written: `1`, `true`, `'locked'` or `time()`
@@ -150,7 +172,7 @@ Known limitations:
 - A key read in one function and written in another, or built differently at each call, is not matched
 - Options, meta and object cache values have the same race, but are not checked
 
-### 7. Direct File Access
+### 8. Direct File Access
 The guard can come after the opening tag, comments, `declare()`, the `namespace` line and `use` imports, but must come before any other code:
 - `Missing` (error) - the file runs code when loaded and has no guard. Reported at the first line of code.
 - `Misplaced` (error) - there is a guard, but code runs before it. Reported at the first line of code.
@@ -168,7 +190,7 @@ The sniffs intentionally skip:
 - **Magic methods** - `__construct()`, `__call()`, etc. are allowed
 - **Translation functions** - `__()`, `_e()`, etc. are excluded from prefix checks
 - **Namespaced classes** - Classes inside namespaces don't require underscored prefixes
-- **Other plugin files** - `Tested up to` is only checked in the main plugin file
+- **Other plugin files** - `Tested up to` and `Requires Plugins` are only checked in the main plugin file
 - **Plain links** - URLs in files that don't make remote requests aren't checked against the readme
 - **WordPress.org and local URLs** - `wordpress.org`, `example.com`, `localhost`, `.test`/`.local` domains and private IPs never need documenting
 - **Cache refills** - Reading a transient, then writing freshly computed data back to it, isn't flagged as a race
@@ -203,6 +225,7 @@ Current sniffs:
 - `WPOrgSubmissionRules.Naming.FunctionExistsWrapper`
 - `WPOrgSubmissionRules.Naming.PrefixLength`
 - `WPOrgSubmissionRules.Naming.UniqueName`
+- `WPOrgSubmissionRules.PluginHeader.RequiresPlugins`
 - `WPOrgSubmissionRules.PluginHeader.TestedUpTo`
 - `WPOrgSubmissionRules.Security.DirectFileAccess`
 

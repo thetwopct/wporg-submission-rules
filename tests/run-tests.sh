@@ -60,6 +60,7 @@ else
     echo "  - Inline script/style tags"
     echo "  - Translation functions with variables"
     echo "  - \"Tested up to\" in the plugin header"
+    echo "  - \"Requires Plugins\" slugs that aren't on WordPress.org"
     echo "  - External services not documented in readme.txt"
     echo "  - Non-atomic transient updates (race conditions)"
     echo "  - Missing direct file access (ABSPATH) check"

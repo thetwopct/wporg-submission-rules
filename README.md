@@ -66,6 +66,16 @@ The external services rule ignores WordPress.org, `example.com` and local URLs. 
 </rule>
 ```
 
+The `Requires Plugins` rule looks up each dependency in the WordPress.org plugin directory. You can turn the lookup off (for example, in CI without network access) and only check the slug format:
+
+```
+<rule ref="WPOrgSubmissionRules.PluginHeader.RequiresPlugins">
+	<properties>
+		<property name="checkDirectory" value="false" />
+	</properties>
+</rule>
+```
+
 ## What the sniffs detect:
 
 Here are some of the review issues from WordPress.org that these sniffs try to make sure you avoid:
@@ -163,6 +173,20 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 `defined( 'ABSPATH' ) || exit;` and other constants such as `WPINC` or `WP_UNINSTALL_PLUGIN` also work. Files that only contain class or function definitions don't need it.
 
 **Sniff**: `WPOrgSubmissionRules.Security.DirectFileAccess`
+
+### 12) Requires Plugins, plugin not found in WordPress.org directory
+
+The `Requires Plugins` header is a comma-separated list of WordPress.org slugs for your plugin's dependencies. It needs the slug, not the plugin's name: the slug for https://wordpress.org/plugins/classic-editor/ is `classic-editor`. The dependency must also be in the WordPress.org plugin directory, so premium plugins such as Gravity Forms can't be listed.
+
+In the main plugin file's `Requires Plugins` header, the sniff flags:
+
+- Entries that aren't in slug format (e.g. `Gravity Forms` or `woocommerce/woocommerce.php`), which WordPress ignores
+- The plugin's own slug
+- Slugs that aren't in the WordPress.org plugin directory, or whose plugin has been closed
+
+The last check asks the WordPress.org API about each slug. It only runs when the header is present, and results are cached for a day. If WordPress.org can't be reached, you get a warning rather than an error. See above to turn the lookup off.
+
+**Sniff**: `WPOrgSubmissionRules.PluginHeader.RequiresPlugins`
 
 ## Checks covered by WordPress Coding Standards
 
